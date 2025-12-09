@@ -4,3 +4,5 @@
 - Real-time ASCII rendering
 ## Technical Specifications
 - Canvas 2D rendering
+## Browser Compatibility
+- Chrome 90+ support confirmed
