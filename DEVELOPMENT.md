@@ -6,3 +6,5 @@
 - Canvas 2D rendering
 ## Browser Compatibility
 - Chrome 90+ support confirmed
+## Performance Notes
+- 60+ FPS achieved
