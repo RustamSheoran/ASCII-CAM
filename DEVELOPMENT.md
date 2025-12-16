@@ -8,3 +8,5 @@
 - Chrome 90+ support confirmed
 ## Performance Notes
 - 60+ FPS achieved
+## Known Issues
+- Mobile orientation handled
