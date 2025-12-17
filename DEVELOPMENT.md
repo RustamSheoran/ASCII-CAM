@@ -10,3 +10,5 @@
 - 60+ FPS achieved
 ## Known Issues
 - Mobile orientation handled
+## Future Plans
+- Export to GIF format
