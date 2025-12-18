@@ -12,3 +12,5 @@
 - Mobile orientation handled
 ## Future Plans
 - Export to GIF format
+## Configuration Options
+- Font size: 6-30px
