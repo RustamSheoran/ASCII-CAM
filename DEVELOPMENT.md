@@ -16,3 +16,5 @@
 - Font size: 6-30px
 ## Character Sets
 - Standard: @%#*+=-:. 
+## Usage Guide
+1. Grant camera access
