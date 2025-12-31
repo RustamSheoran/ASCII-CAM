@@ -19,3 +19,4 @@
 ## Usage Guide
 1. Grant camera access
 2. Select character set
+3. Adjust contrast/brightness
