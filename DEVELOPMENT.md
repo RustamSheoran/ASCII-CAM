@@ -20,3 +20,5 @@
 1. Grant camera access
 2. Select character set
 3. Adjust contrast/brightness
+## Troubleshooting
+- Camera not detected: Check permissions
