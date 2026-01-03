@@ -23,3 +23,5 @@
 ## Troubleshooting
 - Camera not detected: Check permissions
 - Low FPS: Reduce font size
+## API Reference
+- AsciiRenderer interface
