@@ -25,3 +25,4 @@
 - Low FPS: Reduce font size
 ## API Reference
 - AsciiRenderer interface
+- AsciiSettings type
