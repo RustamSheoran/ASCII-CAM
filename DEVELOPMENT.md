@@ -26,3 +26,5 @@
 ## API Reference
 - AsciiRenderer interface
 - AsciiSettings type
+## Contributing
+PRs welcome
