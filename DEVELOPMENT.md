@@ -28,3 +28,5 @@
 - AsciiSettings type
 ## Contributing
 PRs welcome
+## License
+MIT License - see LICENSE file
