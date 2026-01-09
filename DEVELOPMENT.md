@@ -30,3 +30,5 @@
 PRs welcome
 ## License
 MIT License - see LICENSE file
+## Credits
+Created by Rustam Sheoran
