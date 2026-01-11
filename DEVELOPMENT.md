@@ -34,3 +34,5 @@ MIT License - see LICENSE file
 Created by Rustam Sheoran
 ## Changelog
 See commit history for details
+## Testing
+Tested on Chrome 120
