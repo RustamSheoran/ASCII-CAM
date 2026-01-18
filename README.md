@@ -6,9 +6,7 @@
   ██║     ╚██╗ ██╔╝██╔══██╗   ██║   ██╔══██╗
   ╚██████╗ ╚████╔╝ ██║  ██║   ██║   ██║  ██║
    ╚═════╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
-    📸  REAL-TIME ASCII ART CAMERA
-  
-  <img src="public/assets/banner.png" alt="Project Logo" width="full">
+     📸  REAL-TIME ASCII ART CAMERA
   
   # ASCII-Cam
   
