@@ -1,6 +1,6 @@
-# Contributing to Phosphor Cam
+# Contributing to ASCII-Cam
 
-Thank you for considering contributing to Phosphor-Cam! This document provides guidelines for contributing to the project.
+Thank you for considering contributing to ASCII-Cam! This document provides guidelines for contributing to the project.
 
 ## Getting Started
 
@@ -14,8 +14,8 @@ Thank you for considering contributing to Phosphor-Cam! This document provides g
 
 ```bash
 # Fork and clone the repository
-git clone https://github.com/yourusername/phosphor-cam.git
-cd phosphor-cam
+git clone https://github.com/RustamSheoran/ASCII-CAM.git
+cd ASCII-Cam
 
 # Install dependencies
 npm install
@@ -59,6 +59,7 @@ src/
 ### Submitting Pull Requests
 
 1. **Create a branch** from `main`
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -69,6 +70,7 @@ src/
    - Test thoroughly on multiple browsers
 
 3. **Commit with clear messages**
+
    ```bash
    git commit -m "Add: new character set for ASCII rendering"
    ```
