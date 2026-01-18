@@ -9,7 +9,7 @@ interface SettingsCompProps {
   onChange: (newSettings: AsciiSettings) => void;
 }
 
-type SliderEvent = React.MouseEvent | React.TouchEvent;
+type SliderEvent = React.MouseEvent | React.TouchEvent | Event;
 
 const SLIDER_CONFIGS = {
   fontSize: {
@@ -51,10 +51,21 @@ function Settings({ settings, onChange }: SettingsCompProps) {
     onChange({ ...settings, [key]: value });
   };
 
-  const getClientPos = (e: SliderEvent) => ({
-    x: "touches" in e ? e.touches[0].clientX : e.clientX,
-    y: "touches" in e ? e.touches[0].clientY : e.clientY,
-  });
+  const getClientPos = (e: SliderEvent) => {
+    if ("touches" in e && e.touches && e.touches.length > 0) {
+      return {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+    if ("clientX" in e && "clientY" in e) {
+      return {
+        x: e.clientX as number,
+        y: e.clientY as number,
+      };
+    }
+    return { x: 0, y: 0 };
+  };
 
   const handleSliderStart = (key: string, value: number, e: SliderEvent) => {
     setSliderRect(
@@ -104,11 +115,7 @@ function Settings({ settings, onChange }: SettingsCompProps) {
           onMouseDown={(e) => handleSliderStart(key, settings[key], e)}
           onTouchStart={(e) => handleSliderStart(key, settings[key], e)}
           onChange={(e) =>
-            handleSliderChange(
-              key,
-              +e.target.value,
-              e as unknown as SliderEvent,
-            )
+            handleSliderChange(key, +e.target.value, e.nativeEvent)
           }
           onMouseUp={() => setActiveSlider(null)}
           onTouchEnd={() => setActiveSlider(null)}
@@ -267,11 +274,7 @@ function Settings({ settings, onChange }: SettingsCompProps) {
             }
             value={sliderValue}
             onChange={(e) =>
-              handleSliderChange(
-                activeSlider,
-                +e.target.value,
-                e as unknown as SliderEvent,
-              )
+              handleSliderChange(activeSlider, +e.target.value, e.nativeEvent)
             }
             onMouseUp={() => setActiveSlider(null)}
             onTouchEnd={() => setActiveSlider(null)}

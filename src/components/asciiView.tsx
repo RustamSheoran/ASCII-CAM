@@ -1,6 +1,15 @@
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import {
+    forwardRef,
+    memo,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+} from 'react'
 import { AsciiRendererHandle, AsciiSettings, CHAR_SETS, ProcessingStats } from '../types/types'
 import { adjustColor, createBrightnessMap, getChar, getLuminance } from '../utils/asciiUtils'
+import { RENDER_CONSTANTS } from '../utils/constants'
 
 interface AsciiViewProps {
     settings: AsciiSettings
@@ -19,8 +28,11 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
         const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
         const lastTimeRef = useRef<number>(0)
         const animationIdRef = useRef<number | null>(null)
+        const lastStatsUpdateRef = useRef<number>(0)
+        const isRenderingRef = useRef<boolean>(true)
 
         const ramp = CHAR_SETS[settings.characterSet]
+        const brightnessMap = useMemo(() => createBrightnessMap(ramp), [ramp])
 
         useImperativeHandle(ref, () => ({
             getCanvas: () => canvasRef.current,
@@ -29,18 +41,17 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const video = videoRef.current
                 if (!video || video.readyState !== 4) throw new Error('Video not ready')
 
-                const scaleFactor = 4
                 const imageSpecs = {
-                    height: canvasSize.height * scaleFactor,
-                    wdith: canvasSize.width * scaleFactor,
-                    fontSize: settings.fontSize * scaleFactor,
+                    height: canvasSize.height * RENDER_CONSTANTS.CAPTURE_SCALE_FACTOR,
+                    width: canvasSize.width * RENDER_CONSTANTS.CAPTURE_SCALE_FACTOR,
+                    fontSize: settings.fontSize * RENDER_CONSTANTS.CAPTURE_SCALE_FACTOR,
                 }
 
-                if (imageSpecs.height <= 0 || imageSpecs.wdith <= 0)
+                if (imageSpecs.height <= 0 || imageSpecs.width <= 0)
                     throw new Error('Invalid capture dimensions')
 
                 const tempCanvas = document.createElement('canvas')
-                tempCanvas.width = imageSpecs.wdith
+                tempCanvas.width = imageSpecs.width
                 tempCanvas.height = imageSpecs.height
 
                 const tempCtx = tempCanvas.getContext('2d', { alpha: false })
@@ -63,7 +74,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const pixels = imageData.data
 
                 tempCtx.fillStyle = '#000000'
-                tempCtx.fillRect(0, 0, imageSpecs.wdith, imageSpecs.height)
+                tempCtx.fillRect(0, 0, imageSpecs.width, imageSpecs.height)
                 tempCtx.font = `${imageSpecs.fontSize}px 'Fira Code', monospace`
                 tempCtx.textBaseline = 'top'
 
@@ -99,41 +110,51 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 if (!video || video.readyState !== 4 || !video.videoWidth || !video.videoHeight)
                     return ''
                 const tempCanvas = document.createElement('canvas')
-                const standardWidth = 150
                 const aspectRatio = video.videoHeight / video.videoWidth
-                const standardHeight = Math.max(1, Math.floor(standardWidth * aspectRatio * 0.55))
+                const standardHeight = Math.max(
+                    1,
+                    Math.floor(RENDER_CONSTANTS.CLIPBOARD_WIDTH * aspectRatio * 0.55),
+                )
 
-                tempCanvas.width = standardWidth
+                tempCanvas.width = RENDER_CONSTANTS.CLIPBOARD_WIDTH
                 tempCanvas.height = standardHeight
 
                 const tempCtx = tempCanvas.getContext('2d')
                 if (!tempCtx) return ''
 
-                tempCtx.drawImage(video, 0, 0, standardWidth, standardHeight)
-                const imageData = tempCtx.getImageData(0, 0, standardWidth, standardHeight)
+                tempCtx.drawImage(video, 0, 0, RENDER_CONSTANTS.CLIPBOARD_WIDTH, standardHeight)
+                const imageData = tempCtx.getImageData(
+                    0,
+                    0,
+                    RENDER_CONSTANTS.CLIPBOARD_WIDTH,
+                    standardHeight,
+                )
                 const pixels = imageData.data
 
                 const brightnessMap = createBrightnessMap(ramp)
 
-                let copyContent = ''
+                const rows: string[] = []
 
                 for (let y = 0; y < standardHeight; y++) {
-                    for (let x = 0; x < standardWidth; x++) {
-                        const idx = (y * standardWidth + x) * 4
+                    const rowChars: string[] = []
+                    for (let x = 0; x < RENDER_CONSTANTS.CLIPBOARD_WIDTH; x++) {
+                        const idx = (y * RENDER_CONSTANTS.CLIPBOARD_WIDTH + x) * 4
                         const l = getLuminance(pixels[idx], pixels[idx + 1], pixels[idx + 2]) // R G B
                         const adjL = adjustColor(l, settings.contrast, settings.brightness)
                         const char = getChar(adjL, brightnessMap, settings.invert)
 
-                        copyContent += char
+                        rowChars.push(char)
                     }
-                    copyContent += '\n'
+                    rows.push(rowChars.join(''))
                 }
-                return copyContent
+                return rows.join('\n')
             },
         }))
 
         const renderCanvas = useCallback(
             (time: number) => {
+                if (!isRenderingRef.current) return
+
                 const startRender = performance.now()
                 const delta = time - lastTimeRef.current
                 lastTimeRef.current = time
@@ -142,14 +163,18 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const video = videoRef.current
                 const canvas = canvasRef.current
                 if (!canvas || !video) {
-                    animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    if (isRenderingRef.current) {
+                        animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    }
                     return
                 }
 
                 const ctx = canvas.getContext('2d', { alpha: false })
 
                 if (!ctx) {
-                    animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    if (isRenderingRef.current) {
+                        animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    }
                     return
                 }
 
@@ -159,13 +184,16 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const srcH = Math.floor(canvasSize.height / fontScale)
 
                 if (srcW <= 0 || srcH <= 0) {
-                    animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    if (isRenderingRef.current) {
+                        animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    }
                     return
                 }
 
-                // draw video small to get pixels
                 if (!hiddenCanvasRef.current) {
-                    animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    if (isRenderingRef.current) {
+                        animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    }
                     return
                 }
 
@@ -183,20 +211,23 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true })
 
                 if (!hiddenCtx) {
-                    animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    if (isRenderingRef.current) {
+                        animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    }
                     return
                 }
 
                 try {
                     hiddenCtx.drawImage(video, 0, 0, srcW, srcH)
                 } catch {
-                    animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    if (isRenderingRef.current) {
+                        animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                    }
                     return
                 }
 
                 const pixels = hiddenCtx.getImageData(0, 0, srcW, srcH).data
 
-                const brightnessMap = createBrightnessMap(ramp)
                 const { contrast, brightness: brightnessOffset, colorMode, invert } = settings
 
                 // draw ASCII on the visible canvas
@@ -207,12 +238,10 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 ctx.font = `${fontScale}px 'Fira Code', monospace`
 
                 ctx.fillStyle = invert ? '#00ff00' : '#000000'
-                if (!invert) ctx.fillStyle = '#000000'
                 ctx.textBaseline = 'top'
 
                 const pixelCount = srcW * srcH
 
-                // let i = 0
                 for (let i = 0; i < pixelCount; i++) {
                     const r = pixels[i * 4]
                     const g = pixels[i * 4 + 1]
@@ -220,7 +249,6 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                     let l = 0.299 * r + 0.587 * g + 0.114 * b
 
-                    // Adjust
                     if (contrast !== 1.0 || brightnessOffset !== 0) {
                         l = adjustColor(l, contrast, brightnessOffset)
                     }
@@ -229,9 +257,6 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                     const x = (i % srcW) * fontScale
                     const y = Math.floor(i / srcW) * fontScale
-
-                    // const brightness = (r + g + b) / 3
-                    // const idx = Math.floor((brightness / 255) * (ramp.length - 1))
 
                     if (colorMode) {
                         ctx.fillStyle = `rgb(${r},${g},${b})`
@@ -244,16 +269,22 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                 const endRender = performance.now()
 
-                if (Math.random() > 0.95) {
+                const now = performance.now()
+                if (now - lastStatsUpdateRef.current > RENDER_CONSTANTS.STATS_UPDATE_INTERVAL_MS) {
                     onStatsUpdate({ fps, renderTime: endRender - startRender })
+                    lastStatsUpdateRef.current = now
                 }
-                animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                if (isRenderingRef.current) {
+                    animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
+                }
             },
-            [settings, canvasSize.height, canvasSize.width, onStatsUpdate, ramp],
+            [settings, canvasSize.height, canvasSize.width, onStatsUpdate, brightnessMap],
         )
 
         useEffect(() => {
             if (!stream) return
+
+            isRenderingRef.current = true
 
             const video = videoRef.current
             if (!video) return
@@ -264,6 +295,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
             animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
 
             return () => {
+                isRenderingRef.current = false
                 if (animationIdRef.current !== null) {
                     cancelAnimationFrame(animationIdRef.current)
                 }

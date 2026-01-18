@@ -11,16 +11,17 @@ import {
 import CameraControls from './components/cameraControls'
 import { MdCancel } from 'react-icons/md'
 import { getSupportedMediaRecorderMimeType } from './utils/mediaRecorder'
+import { RENDER_CONSTANTS, SETTINGS_CONSTANTS } from './utils/constants'
 
 function App() {
     const DEFAULT_SETTINGS: AsciiSettings = {
-        resolution: 0.2,
-        fontSize: 10,
-        contrast: 1.2,
-        brightness: 0,
-        colorMode: false,
-        invert: false,
-        characterSet: 'standard',
+        resolution: SETTINGS_CONSTANTS.DEFAULT_RESOLUTION,
+        fontSize: SETTINGS_CONSTANTS.DEFAULT_FONT_SIZE,
+        contrast: SETTINGS_CONSTANTS.DEFAULT_CONTRAST,
+        brightness: SETTINGS_CONSTANTS.DEFAULT_BRIGHTNESS,
+        colorMode: SETTINGS_CONSTANTS.DEFAULT_COLOR_MODE,
+        invert: SETTINGS_CONSTANTS.DEFAULT_INVERT,
+        characterSet: SETTINGS_CONSTANTS.DEFAULT_CHARACTER_SET,
     }
 
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -55,8 +56,8 @@ function App() {
 
                 const constraints: MediaStreamConstraints = {
                     video: {
-                        height: { ideal: 1080 },
-                        width: { ideal: 1920 },
+                        height: { ideal: RENDER_CONSTANTS.DEFAULT_VIDEO_HEIGHT },
+                        width: { ideal: RENDER_CONSTANTS.DEFAULT_VIDEO_WIDTH },
                         facingMode,
                     },
                     audio: false,
@@ -100,7 +101,7 @@ function App() {
     const takeSnapshot = useCallback(async () => {
         if (!asciiRendererRef.current) return
         setFlash(true)
-        setTimeout(() => setFlash(false), 200)
+        setTimeout(() => setFlash(false), RENDER_CONSTANTS.FLASH_DURATION_MS)
 
         try {
             const imageUrl = await asciiRendererRef.current.captureImage()
@@ -129,7 +130,10 @@ function App() {
 
             navigator.clipboard.writeText(copyContent).then(() => {
                 setClipboardSuccess(true)
-                setTimeout(() => setClipboardSuccess(false), 2000)
+                setTimeout(
+                    () => setClipboardSuccess(false),
+                    RENDER_CONSTANTS.CLIPBOARD_SUCCESS_DURATION_MS,
+                )
             })
         } catch (error) {
             console.log('Copy Failed:', error)
@@ -139,7 +143,6 @@ function App() {
 
     const toggleRecording = useCallback(() => {
         if (isRecording) {
-            // stop recodring
             if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
                 mediaRecorderRef.current.stop()
 
@@ -147,14 +150,11 @@ function App() {
             }
             setIsRecording(false)
         } else {
-            // start recodring
             const canvas = asciiRendererRef.current?.getCanvas()
             if (!canvas || !canvas.height || !canvas.width)
                 throw new Error('Error while start recording')
 
-            const videoBitsPerSecond = 2500000 // Default 2.5 Mbps
-
-            const stream = canvas.captureStream(30) // 30 fps
+            const stream = canvas.captureStream(RENDER_CONSTANTS.VIDEO_RECORDING_FPS)
 
             try {
                 const mimeType = getSupportedMediaRecorderMimeType()
@@ -164,7 +164,7 @@ function App() {
 
                 const options: MediaRecorderOptions = {
                     mimeType,
-                    videoBitsPerSecond,
+                    videoBitsPerSecond: RENDER_CONSTANTS.VIDEO_BITRATE,
                 }
 
                 const recorder = new MediaRecorder(stream, options)

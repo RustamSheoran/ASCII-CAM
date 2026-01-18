@@ -1,6 +1,3 @@
-/**
- * Pre-calculates a lookup table for brightness to character mapping
- */
 export const createBrightnessMap = (chars: string): string[] => {
     const map: string[] = []
     const len = chars.length
@@ -11,11 +8,6 @@ export const createBrightnessMap = (chars: string): string[] => {
     return map
 }
 
-/**
- * Adjusts color values based on brightness and contrast settings.
- *
- * formula: factor * (color - 128) + 128 + brightness
- */
 export const adjustColor = (val: number, contrast: number, brightness: number): number => {
     const v = contrast * (val - 128) + 128 + brightness
     return Math.max(0, Math.min(255, v))

@@ -1,5 +1,6 @@
 import { RefreshCw, Copy, Check } from 'lucide-react'
 import { memo, useState } from 'react'
+import { RENDER_CONSTANTS } from '../utils/constants'
 
 type CameraControlsProps = {
     onFlip: () => void
@@ -27,13 +28,13 @@ const CameraControls = ({
     const handleFlip = () => {
         setIsFlipping(prev => !prev)
         onFlip()
-        setTimeout(() => setIsFlipping(prev => !prev), 600)
+        setTimeout(() => setIsFlipping(prev => !prev), RENDER_CONSTANTS.CAMERA_FLIP_DURATION_MS)
     }
 
     const handleCopy = () => {
         setIsCopied(true)
         onCopy()
-        setTimeout(() => setIsCopied(false), 1000)
+        setTimeout(() => setIsCopied(false), RENDER_CONSTANTS.COPY_SUCCESS_DURATION_MS)
     }
 
     return (
